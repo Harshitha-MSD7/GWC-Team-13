@@ -1,9 +1,9 @@
 /* ============================================================
    Hobby Tracker — app.js
-   FastAPI backend: http://127.0.0.1:8000
+   FastAPI backend: https://gwc-team-13.onrender.com
    ============================================================ */
 
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE = 'https://gwc-team-13.onrender.com';
 
 let editingId = null;
 let currentFilter = '';
