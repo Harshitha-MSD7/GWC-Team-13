@@ -6,7 +6,7 @@
 # Description:
 #   REST API built with FastAPI for tracking hobby sessions.
 #   Supports baking, crochet, and pottery entries.
-#   Uses in-memory storage (no database just lists).
+#   Uses SQLite for permanent storage (data survives restarts).
 #
 # Run:
 #   uvicorn main:app --reload
@@ -34,6 +34,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date
+import sqlite3
 
 
 # ============================================================
@@ -52,7 +53,6 @@ app = FastAPI(
 # ============================================================
 # Allows the frontend to communicate with this backend.
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -63,9 +63,8 @@ app.add_middleware(
 
 
 # ============================================================
-# ERROR HANDLERS
+# FRIENDLY ERROR HANDLERS
 # ============================================================
-# These catch errors and return messages
 
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(request, exc):
@@ -97,6 +96,41 @@ VALID_HOBBY_TYPES = {"baking", "crochet", "pottery"}
 
 
 # ============================================================
+# DATABASE SETUP
+# ============================================================
+# SQLite stores everything in a single file called hobbies.db
+# This file sits in your project folder and survives restarts.
+# get_db() opens a connection to the file whenever we need it.
+# init_db() creates the hobbies table if it doesn't exist yet.
+
+DB_NAME = "hobbies.db"
+
+def get_db():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row  # lets us access columns by name instead of index
+    return conn
+
+def init_db():
+    conn = get_db()
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS hobbies (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            hobby_type  TEXT    NOT NULL,
+            title       TEXT    NOT NULL,
+            date        TEXT    NOT NULL,
+            completed   INTEGER NOT NULL,
+            duration    INTEGER NOT NULL,
+            notes       TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+# Run init_db when the server starts so the table is always ready
+init_db()
+
+
+# ============================================================
 # DATA MODELS (Pydantic)
 # ============================================================
 # HobbyEntry       — used for POST (creating a new entry)
@@ -123,15 +157,21 @@ class HobbyEntryUpdate(BaseModel):
 
 
 # ============================================================
-# IN-MEMORY STORAGE
+# HELPER FUNCTION
 # ============================================================
-# Acts as the database for this project.
-# hobby_list stores all entries as dictionaries.
-# id_counter auto-increments to give each entry a unique id.
-# Note: all data resets when the server restarts.
+# Converts a database row into a clean Python dictionary
+# so FastAPI can turn it into JSON easily.
 
-hobby_list: List[dict] = []
-id_counter: int = 1
+def row_to_dict(row):
+    return {
+        "id":         row["id"],
+        "hobby_type": row["hobby_type"],
+        "title":      row["title"],
+        "date":       row["date"],
+        "completed":  bool(row["completed"]),  # SQLite stores 0/1, we want True/False
+        "duration":   row["duration"],
+        "notes":      row["notes"],
+    }
 
 
 # ============================================================
@@ -153,50 +193,53 @@ def root():
 @app.post("/hobbies", status_code=201, tags=["Hobbies"])
 def create_hobby(entry: HobbyEntry):
     """
-    Creates a new hobby entry.
+    Creates a new hobby entry and saves it to the database.
 
     - Validates that hobby_type is one of: baking, crochet, pottery
     - Auto-generates a unique id
     - Returns the created entry including the new id
     """
-    global id_counter
-
     if entry.hobby_type not in VALID_HOBBY_TYPES:
         raise HTTPException(
             status_code=400,
             detail="That hobby type doesn't exist! Stick to baking, crochet, or pottery 🎨"
         )
 
-    new_entry = {
-        "id": id_counter,
-        "hobby_type": entry.hobby_type,
-        "title": entry.title,
-        "date": str(entry.date),
-        "completed": entry.completed,
-        "duration": entry.duration,
-        "notes": entry.notes,
-    }
+    conn = get_db()
+    cursor = conn.execute(
+        "INSERT INTO hobbies (hobby_type, title, date, completed, duration, notes) VALUES (?, ?, ?, ?, ?, ?)",
+        (entry.hobby_type, entry.title, str(entry.date), int(entry.completed), entry.duration, entry.notes)
+    )
+    conn.commit()
 
-    hobby_list.append(new_entry)
-    id_counter += 1
+    # Fetch the newly created entry so we can return it with its auto-generated id
+    new_entry = conn.execute("SELECT * FROM hobbies WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    conn.close()
 
-    return new_entry
+    return row_to_dict(new_entry)
 
 
 # --- Get all hobby entries (with optional filter) ---
 @app.get("/hobbies", tags=["Hobbies"])
 def get_hobbies(hobby_type: Optional[str] = None):
     """
-    Returns all hobby entries.
+    Returns all hobby entries from the database.
 
     - Optional query parameter: ?hobby_type=baking
     - Filters results by hobby type when provided
     - Returns all entries when no filter is given
     """
+    conn = get_db()
+
     if hobby_type:
-        filtered = [h for h in hobby_list if h["hobby_type"] == hobby_type]
-        return filtered
-    return hobby_list
+        rows = conn.execute(
+            "SELECT * FROM hobbies WHERE hobby_type = ?", (hobby_type,)
+        ).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM hobbies").fetchall()
+
+    conn.close()
+    return [row_to_dict(row) for row in rows]
 
 
 # --- Get a single hobby entry by id ---
@@ -207,14 +250,17 @@ def get_hobby(hobby_id: int):
 
     - Returns a friendly 404 message if the id does not exist
     """
-    for hobby in hobby_list:
-        if hobby["id"] == hobby_id:
-            return hobby
+    conn = get_db()
+    row = conn.execute("SELECT * FROM hobbies WHERE id = ?", (hobby_id,)).fetchone()
+    conn.close()
 
-    raise HTTPException(
-        status_code=404,
-        detail="We couldn't find that hobby entry! Double check the ID and try again 🔍"
-    )
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail="We couldn't find that hobby entry! Double check the ID and try again 🔍"
+        )
+
+    return row_to_dict(row)
 
 
 # --- Update an existing hobby entry ---
@@ -228,34 +274,57 @@ def update_hobby(hobby_id: int, updates: HobbyEntryUpdate):
     - Returns the updated entry
     - Returns a friendly 404 message if the id does not exist
     """
-    for hobby in hobby_list:
-        if hobby["id"] == hobby_id:
+    conn = get_db()
 
-            if updates.hobby_type is not None:
-                if updates.hobby_type not in VALID_HOBBY_TYPES:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="That hobby type doesn't exist! Stick to baking, crochet, or pottery 🎨"
-                    )
-                hobby["hobby_type"] = updates.hobby_type
+    # First check the entry actually exists
+    existing = conn.execute("SELECT * FROM hobbies WHERE id = ?", (hobby_id,)).fetchone()
+    if not existing:
+        conn.close()
+        raise HTTPException(
+            status_code=404,
+            detail="We couldn't find that hobby entry! Double check the ID and try again 🔍"
+        )
 
-            if updates.title is not None:
-                hobby["title"] = updates.title
-            if updates.date is not None:
-                hobby["date"] = str(updates.date)
-            if updates.completed is not None:
-                hobby["completed"] = updates.completed
-            if updates.duration is not None:
-                hobby["duration"] = updates.duration
-            if updates.notes is not None:
-                hobby["notes"] = updates.notes
+    # Validate hobby_type if it's being updated
+    if updates.hobby_type is not None and updates.hobby_type not in VALID_HOBBY_TYPES:
+        conn.close()
+        raise HTTPException(
+            status_code=400,
+            detail="That hobby type doesn't exist! Stick to baking, crochet, or pottery 🎨"
+        )
 
-            return hobby
+    # Build the update dynamically — only update fields that were actually sent
+    fields = []
+    values = []
 
-    raise HTTPException(
-        status_code=404,
-        detail="We couldn't find that hobby entry! Double check the ID and try again 🔍"
-    )
+    if updates.hobby_type is not None:
+        fields.append("hobby_type = ?")
+        values.append(updates.hobby_type)
+    if updates.title is not None:
+        fields.append("title = ?")
+        values.append(updates.title)
+    if updates.date is not None:
+        fields.append("date = ?")
+        values.append(str(updates.date))
+    if updates.completed is not None:
+        fields.append("completed = ?")
+        values.append(int(updates.completed))
+    if updates.duration is not None:
+        fields.append("duration = ?")
+        values.append(updates.duration)
+    if updates.notes is not None:
+        fields.append("notes = ?")
+        values.append(updates.notes)
+
+    if fields:
+        values.append(hobby_id)
+        conn.execute(f"UPDATE hobbies SET {', '.join(fields)} WHERE id = ?", values)
+        conn.commit()
+
+    updated = conn.execute("SELECT * FROM hobbies WHERE id = ?", (hobby_id,)).fetchone()
+    conn.close()
+
+    return row_to_dict(updated)
 
 
 # --- Delete a hobby entry ---
@@ -267,13 +336,19 @@ def delete_hobby(hobby_id: int):
     - Returns a friendly confirmation message on success
     - Returns a friendly 404 message if the id does not exist
     """
-    for index, hobby in enumerate(hobby_list):
-        if hobby["id"] == hobby_id:
-            hobby_list.pop(index)
-            return {"message": f"Entry #{hobby_id} has been deleted successfully! Hope you had fun 🌟"}
+    conn = get_db()
 
-    raise HTTPException(
-        status_code=404,
-        detail="We couldn't find that hobby entry! Double check the ID and try again 🔍"
-    )
+    # Check entry exists before trying to delete
+    existing = conn.execute("SELECT * FROM hobbies WHERE id = ?", (hobby_id,)).fetchone()
+    if not existing:
+        conn.close()
+        raise HTTPException(
+            status_code=404,
+            detail="We couldn't find that hobby entry! Double check the ID and try again 🔍"
+        )
 
+    conn.execute("DELETE FROM hobbies WHERE id = ?", (hobby_id,))
+    conn.commit()
+    conn.close()
+
+    return {"message": f"Entry #{hobby_id} has been deleted successfully! Hope you had fun 🌟"}
