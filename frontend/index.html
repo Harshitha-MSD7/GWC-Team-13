@@ -245,7 +245,7 @@
   .card-flip { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform .7s cubic-bezier(0.16,1,0.3,1); }
   .card.flipped .card-flip { transform: rotateY(180deg); }
   .card-face, .card-back { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-  .card-back { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateY(180deg); background: #0f0f1c; border-radius: var(--radius); padding: 1.4rem; display: flex; flex-direction: column; gap: .8rem; }
+  .card-back { position: absolute; top: 0; left: 0; width: 100%; min-height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; transform: rotateY(180deg); background: #0f0f1c; border-radius: var(--radius); padding: 1.4rem; display: flex; flex-direction: column; gap: .7rem; overflow-y: auto; }
 
   .card-strip { height: 3px; width: 100%; }
   .card.baking  .card-strip { background: linear-gradient(90deg,var(--baking),transparent 70%); }
@@ -839,6 +839,10 @@ function buildCard(entry) {
               <input class="back-input" type="number" id="be-dur-${entry.id}" value="${entry.duration||''}" min="1" />
             </div>
           </div>
+          <div style="display:flex;align-items:center;gap:.7rem">
+            <input type="checkbox" id="be-cp-${entry.id}" ${done?'checked':''} style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;" />
+            <label for="be-cp-${entry.id}" style="font-size:.8rem;color:var(--text-muted);cursor:pointer">Completed</label>
+          </div>
           <div class="back-actions">
             <button class="back-cancel" onclick="unflipCard(this)">✕ Cancel</button>
             <button class="back-save" onclick="saveCardEdit(${entry.id})">Save ✓</button>
@@ -890,11 +894,13 @@ async function saveCardEdit(id) {
   const tiEl  = document.getElementById(`be-ti-${id}`);
   const dtEl  = document.getElementById(`be-dt-${id}`);
   const durEl = document.getElementById(`be-dur-${id}`);
+  const cpEl = document.getElementById(`be-cp-${id}`);
   const payload = {
     hobby_type: htEl.value,
     title:      tiEl.value.trim(),
     date:       dtEl.value,
     duration:   parseInt(durEl.value,10),
+    completed:  cpEl ? cpEl.checked : false,
   };
   if (!payload.title||!payload.date||isNaN(payload.duration)) { showToast('Please fill all fields.','err'); return; }
   try {
