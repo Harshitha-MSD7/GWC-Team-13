@@ -70,7 +70,7 @@ app.add_middleware(
 async def validation_error_handler(request, exc):
     return JSONResponse(
         status_code=400,
-        content={"message": str(exc.errors()), "detail": exc.errors()}
+        content={"message": "Hmm, something doesn't look right! Make sure all fields are filled in correctly and give it another try 😊"}
     )
 
 @app.exception_handler(404)
@@ -150,7 +150,7 @@ class HobbyEntry(BaseModel):
 class HobbyEntryUpdate(BaseModel):
     hobby_type: Optional[str] = None
     title: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[str] = None
     completed: Optional[bool] = None
     duration: Optional[int] = None
     notes: Optional[str] = None
