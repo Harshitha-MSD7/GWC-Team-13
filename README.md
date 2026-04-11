@@ -31,7 +31,7 @@ Built as part of the **Girls Who Code** program by a team of student developers,
 
 ## Live Demo
 
-- **Website:** https://harshitha-msd7.github.io/GWC-Team-13/
+- **Website:** https://harshitha-msd7.github.io/GWC-Team-13---Harshitha/
 - **API:** https://gwc-team-13.onrender.com
 - **API Docs:** https://gwc-team-13.onrender.com/docs
 
