@@ -1213,11 +1213,16 @@
 
     if (!fd.get('hobby_type')) { showToast('Please select a hobby type.','err'); return; }
 
+    const durationVal = parseInt(fd.get('duration'), 10);
+    if (!fd.get('title') || !fd.get('title').trim()) { showToast('Please enter a title.', 'err'); return; }
+    if (!fd.get('date')) { showToast('Please enter a date.', 'err'); return; }
+    if (isNaN(durationVal) || durationVal < 1) { showToast('Please enter a valid duration (minutes).', 'err'); return; }
+
     const payload = {
       hobby_type: fd.get('hobby_type'),
       title:      fd.get('title').trim(),
       date:       fd.get('date'),
-      duration:   Number(fd.get('duration')),
+      duration:   durationVal,
       completed:  document.getElementById('iCompleted').checked,
       notes:      fd.get('notes') ? fd.get('notes').trim() || null : null,
     };
