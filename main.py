@@ -70,7 +70,7 @@ app.add_middleware(
 async def validation_error_handler(request, exc):
     return JSONResponse(
         status_code=400,
-        content={"message": "Hmm, something doesn't look right! Make sure all fields are filled in correctly and give it another try 😊"}
+        content={"message": "Hmm, something doesn't look right! Make sure all fields are filled in correctly and give it another try 😊", "detail": exc.errors()}
     )
 
 @app.exception_handler(404)
