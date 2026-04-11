@@ -1,41 +1,43 @@
-# 🎨 Hobby Tracker
+# Hobby Tracker
 
-A full stack web application built to help users log and track their creative hobby sessions — including baking, crochet, and pottery.
+A full stack web application for logging and tracking creative hobby sessions — baking, crochet, and pottery.
 
-Built as part of the **Girls Who Code** program by a team of four student developers, each owning a distinct layer of the stack.
+Built as part of the **Girls Who Code** program by a team of student developers, each owning a distinct layer of the stack.
 
 ---
 
-## ✨ Features
+## Features
 
 - Create, view, edit, and delete hobby entries
-- Filter entries by hobby type (Baking, Crochet, Pottery)
-- Track total time spent and sessions completed
+- Filter entries by hobby type
+- Stats per hobby type with animated count-up
 - Persistent storage — data saves across server restarts
-- Clean, responsive UI with a soft claymorphism design
+- Cinematic dark UI with Three.js background, GSAP scroll animations, and 3D card tilt
 - Fully deployed and accessible from any browser
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |---|---|
 | Backend | Python, FastAPI |
 | Database | SQLite |
-| Frontend | HTML, CSS, JavaScript |
-| Deployment | Render (backend), Netlify (frontend) |
+| Frontend | HTML, CSS, Vanilla JavaScript |
+| 3D / Animation | Three.js, GSAP + ScrollTrigger |
+| Deployment | Render (backend), GitHub Pages (frontend) |
 
 ---
 
-## 🚀 Live Demo
+## Live Demo
 
-- **Website:** https://curious-beignet-bd287f.netlify.app
+- **Website:** https://harshitha-msd7.github.io/GWC-Team-13/
+- **API:** https://gwc-team-13.onrender.com
 - **API Docs:** https://gwc-team-13.onrender.com/docs
 
 ---
 
-## 📡 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
@@ -45,9 +47,24 @@ Built as part of the **Girls Who Code** program by a team of four student develo
 | `PUT` | `/hobbies/{id}` | Update an entry by ID |
 | `DELETE` | `/hobbies/{id}` | Delete an entry by ID |
 
+**Data shape:**
+```json
+{
+  "id": 1,
+  "hobby_type": "baking",
+  "title": "Chocolate chip cookies",
+  "date": "2026-03-25",
+  "completed": true,
+  "duration": 45,
+  "notes": "Tried a new recipe"
+}
+```
+
+Valid `hobby_type` values: `baking`, `crochet`, `pottery`
+
 ---
 
-## 💻 Run Locally
+## Run Locally
 
 **1. Clone the repo**
 ```bash
@@ -60,28 +77,33 @@ cd GWC-Team-13
 pip install fastapi uvicorn
 ```
 
-**3. Start the server**
+**3. Start the backend**
 ```bash
 uvicorn main:app --reload
 ```
 
-**4. Open the docs**
+**4. Open the frontend**
+
+Open `frontend/index.html` directly in your browser, or visit the live site above.
+
+**5. API docs**
 ```
 http://127.0.0.1:8000/docs
 ```
 
 ---
 
-## 👩‍💻 Team
+## Team
 
 | Name | Role |
 |---|---|
 | Harshitha Sathees Kumar | Backend Developer |
 | Dafini | API Integration |
 | Sammi & Laken | Frontend Developers |
+| Madeleine Haddad | Mentor |
 
 ---
 
-## 🌱 About
+## About
 
-This project was built as part of the **Girls Who Code** program — an initiative dedicated to closing the gender gap in tech. Each team member took ownership of a specific layer of the application, simulating a real-world development workflow with clear separation of responsibilities.
+Built as part of the **Girls Who Code** program — an initiative dedicated to closing the gender gap in tech. Each team member owned a specific layer of the application, simulating a real-world development workflow.
