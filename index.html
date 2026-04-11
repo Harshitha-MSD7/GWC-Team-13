@@ -973,7 +973,7 @@
     });
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
-      throw new Error(e.detail || `Error ${res.status}`);
+      throw new Error(e.detail || e.message || `Error ${res.status}`);
     }
     return res.json();
   }
