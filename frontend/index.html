@@ -931,7 +931,7 @@ async function submitForm(e) {
   if(!titleVal){showToast('Please enter a title.','err');return;}
   if(!dateVal){showToast('Please enter a date.','err');return;}
   if(isNaN(durVal)||durVal<1){showToast('Please enter a valid duration.','err');return;}
-  const payload={hobby_type:hobbyRadio.value,title:titleVal,date:dateVal,duration:durVal,completed,notes:notesRaw||null};
+  const payload={hobby_type:hobbyRadio.value,title:titleVal,date:dateVal,duration:durVal,completed:Boolean(completed),notes:notesRaw||null};
   subBtn.disabled=true; subBtn.textContent='…';
   try {
     if(editingId!==null){
