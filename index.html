@@ -973,7 +973,7 @@
     });
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
-      throw new Error(JSON.stringify(e.detail) || e.message || `Error ${res.status}`);
+      throw new Error(e.detail || e.message || `Error ${res.status}`);
     }
     return res.json();
   }
@@ -1200,7 +1200,7 @@
     cap.style.color  = e.target.checked ? 'var(--accent)' : '';
   });
 
-  document.getElementById('heroCtaBtn').addEventListener('click', openDrawer);
+  document.getElementById('heroCtaBtn').addEventListener('click', () => openDrawer());
 
   /* ============================================================
      SUBMIT
