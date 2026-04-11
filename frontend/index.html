@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hobby Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-group">
+        <span class="logo-icon">🎨</span>
+        <div class="logo-text">
+          <h1 class="logo-title">Hobby Tracker</h1>
+          <p class="logo-subtitle">Track your creative journey</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="addEntryBtn" onclick="openModal()">
+        <span class="btn-icon">+</span> Add Entry
+      </button>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="main-content">
+
+    <!-- Filter pills -->
+    <section class="filter-section">
+      <div class="filter-pills">
+        <button class="pill pill-all active" onclick="setFilter(this, '')">All</button>
+        <button class="pill pill-baking" onclick="setFilter(this, 'baking')">🥐 Baking</button>
+        <button class="pill pill-crochet" onclick="setFilter(this, 'crochet')">🧶 Crochet</button>
+        <button class="pill pill-pottery" onclick="setFilter(this, 'pottery')">🏺 Pottery</button>
+      </div>
+    </section>
+
+    <!-- Stats bar -->
+    <section class="stats-bar">
+      <div class="stat-box">
+        <span class="stat-value" id="statTotal">0</span>
+        <span class="stat-label">Total Entries</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-value" id="statCompleted">0</span>
+        <span class="stat-label">Completed</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-value" id="statMinutes">0</span>
+        <span class="stat-label">Total Minutes</span>
+      </div>
+    </section>
+
+    <!-- Cards grid -->
+    <section class="cards-section">
+      <div class="cards-grid" id="cardsGrid"></div>
+
+      <!-- Empty state -->
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <span class="empty-icon">🌱</span>
+        <h2 class="empty-title">No entries yet</h2>
+        <p class="empty-text">Start tracking your creative hobbies and watch your progress grow!</p>
+        <button class="btn btn-primary" onclick="openModal()">+ Add your first entry</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal overlay -->
+  <div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalTitle">New Entry</h2>
+        <button class="modal-close" onclick="closeModal()" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form class="modal-form" id="entryForm" onsubmit="submitForm(event)">
+
+        <!-- Hobby type selector -->
+        <div class="form-group">
+          <label class="form-label">Hobby Type</label>
+          <div class="hobby-pills">
+            <label class="hobby-pill hobby-pill-baking">
+              <input type="radio" name="hobby_type" value="baking" required />
+              <span>🥐 Baking</span>
+            </label>
+            <label class="hobby-pill hobby-pill-crochet">
+              <input type="radio" name="hobby_type" value="crochet" />
+              <span>🧶 Crochet</span>
+            </label>
+            <label class="hobby-pill hobby-pill-pottery">
+              <input type="radio" name="hobby_type" value="pottery" />
+              <span>🏺 Pottery</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <div class="form-group">
+          <label class="form-label" for="inputTitle">Title</label>
+          <input
+            class="form-input"
+            type="text"
+            id="inputTitle"
+            name="title"
+            placeholder="e.g. Sourdough bread, Granny square blanket..."
+            required
+          />
+        </div>
+
+        <!-- Date + Duration row -->
+        <div class="form-row">
+          <div class="form-group form-group-half">
+            <label class="form-label" for="inputDate">Date</label>
+            <input class="form-input" type="date" id="inputDate" name="date" required />
+          </div>
+          <div class="form-group form-group-half">
+            <label class="form-label" for="inputDuration">Duration (minutes)</label>
+            <input
+              class="form-input"
+              type="number"
+              id="inputDuration"
+              name="duration"
+              placeholder="e.g. 60"
+              min="1"
+              required
+            />
+          </div>
+        </div>
+
+        <!-- Completed toggle -->
+        <div class="form-group form-group-toggle">
+          <label class="form-label">Completed?</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="inputCompleted" name="completed" />
+            <span class="toggle-track">
+              <span class="toggle-thumb"></span>
+            </span>
+            <span class="toggle-label-text" id="toggleLabelText">In Progress</span>
+          </label>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label class="form-label" for="inputNotes">Notes <span class="optional">(optional)</span></label>
+          <textarea
+            class="form-input form-textarea"
+            id="inputNotes"
+            name="notes"
+            placeholder="Any thoughts, observations, or reflections..."
+            rows="3"
+          ></textarea>
+        </div>
+
+        <!-- Form actions -->
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">Save Entry</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
