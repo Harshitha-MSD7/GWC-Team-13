@@ -703,7 +703,7 @@ let allEntries = [], editingId = null, currentFilter = '';
 
 async function apiFetch(path, opts={}) {
   const res = await fetch(API+path, { headers:{'Content-Type':'application/json'}, ...opts });
-  if (!res.ok) { const e=await res.json().catch(()=>({})); throw new Error(e.detail||e.message||`Error ${res.status}`); }
+  if (!res.ok) { const e=await res.json().catch(()=>({})); throw new Error(Array.isArray(e.detail)?JSON.stringify(e.detail):(e.message||`Error ${res.status}`)); }
   return res.json();
 }
 
